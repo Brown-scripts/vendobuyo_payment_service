@@ -2,6 +2,7 @@ require('dotenv').config();
 const amqp = require("amqplib/callback_api");
 const axios = require("axios");
 const Payment = require("../models/Payment");
+const User = require("../models/User");
 
 // Paystack Secret Key
 const PAYSTACK_SECRET_KEY = process.env.PAYSTACK_SECRET_KEY;
