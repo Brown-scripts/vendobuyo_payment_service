@@ -30,10 +30,15 @@ const sendToQueue = (queue, message) => {
     });
 };
 
-// Initiate Payment
+// 🚀 *Initiate Payment*
 exports.initiatePayment = async (req, res) => {
     try {
         const { orderId, amount, email } = req.body;
+
+        // Validate required fields
+        if (!orderId || !amount || !email) {
+            return res.status(400).json({ message: "Missing required fields" });
+        }
 
         // Create payment link via Paystack API
         const response = await axios.post(
@@ -48,8 +53,8 @@ exports.initiatePayment = async (req, res) => {
         const payment = new Payment({
             orderId,
             amount,
-            email,
             paymentStatus: "pending",
+            paymentDate: new Date(), // ✅ Store current date
             transactionReference: response.data.data.reference,
         });
 
@@ -61,7 +66,7 @@ exports.initiatePayment = async (req, res) => {
     }
 };
 
-// Verify Payment
+// 🚀 *Verify Payment*
 exports.verifyPayment = async (req, res) => {
     try {
         const { reference } = req.params;
@@ -85,11 +90,15 @@ exports.verifyPayment = async (req, res) => {
             return res.status(404).json({ message: "Payment not found" });
         }
 
-        // Update Payment Status
+        // Extract payment method from Paystack response
+        const paystackMethod = transaction.channel || payment.paymentMethod || "unknown";
+
+        // Update Payment Status and Method
         payment.paymentStatus = transaction.status === "success" ? "completed" : "failed";
+        payment.paymentMethod = paystackMethod;
         await payment.save();
 
-        // Prepare Notification with `targetEmail` & `targetPhone`
+        // Prepare Notification with targetEmail & targetPhone
         const message = {
             paymentId: payment._id,
             orderId: payment.orderId._id,
@@ -98,8 +107,8 @@ exports.verifyPayment = async (req, res) => {
             transactionId: payment.transactionReference,
             paymentDate: payment.paymentDate,
             paymentMethod: payment.paymentMethod,
-            targetEmail: payment.orderId.userId.email, // From populated order → user
-            targetPhone: payment.orderId.userId.phone, // From populated order → user
+            targetEmail: payment.orderId.userId.email,
+            targetPhone: payment.orderId.userId.phone,
         };
 
         sendToQueue("payment_status_queue", message);
@@ -110,7 +119,7 @@ exports.verifyPayment = async (req, res) => {
     }
 };
 
-// Paystack Webhook Listener
+// 🚀 *Paystack Webhook Listener*
 exports.paystackWebhook = async (req, res) => {
     try {
         const event = req.body;
@@ -127,11 +136,15 @@ exports.paystackWebhook = async (req, res) => {
             return res.status(404).json({ message: "Payment not found" });
         }
 
-        // Update Payment Status
+        // Extract payment method from webhook
+        const paystackMethod = transaction.channel || payment.paymentMethod || "unknown";
+
+        // Update Payment Status and Method
         payment.paymentStatus = event.event === "charge.success" ? "completed" : "failed";
+        payment.paymentMethod = paystackMethod;
         await payment.save();
 
-        // Prepare Notification with `targetEmail` & `targetPhone`
+        // Prepare Notification with targetEmail & targetPhone
         const message = {
             paymentId: payment._id,
             orderId: payment.orderId._id,
@@ -140,8 +153,8 @@ exports.paystackWebhook = async (req, res) => {
             transactionId: payment.transactionReference,
             paymentDate: payment.paymentDate,
             paymentMethod: payment.paymentMethod,
-            targetEmail: payment.orderId.userId.email, // From populated order → user
-            targetPhone: payment.orderId.userId.phone, // From populated order → user
+            targetEmail: payment.orderId.userId.email,
+            targetPhone: payment.orderId.userId.phone,
         };
 
         sendToQueue("payment_status_queue", message);

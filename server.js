@@ -1,6 +1,3 @@
-// payment-service/app.js
-const { authenticate } = require('./middleware/auth');
-
 const express = require("express");
 const mongoose = require("mongoose");
 const bodyParser = require("body-parser");
@@ -15,9 +12,9 @@ mongoose.connect(process.env.MONGODB_URI, {
 }).then(() => console.log("Connected to MongoDB"))
   .catch((err) => console.log(err));
 
-app.use("", authenticate, paymentRoutes);
+app.use("", paymentRoutes);
 
-const port = process.env.PORT || 5002;
+const port = process.env.PORT || 3005;
 app.listen(port, () => {
   console.log(`Payment Service running on port ${port}`);
 });

@@ -1,4 +1,3 @@
-// payment-service/models/Payment.js
 const mongoose = require("mongoose");
 
 const paymentSchema = new mongoose.Schema(
@@ -9,10 +8,10 @@ const paymentSchema = new mongoose.Schema(
       enum: ["pending", "completed", "failed"],
       default: "pending",
     },
-    paymentMethod: { type: String, required: true },
-    paymentDate: { type: Date },
+    paymentMethod: { type: String },
+    paymentDate: { type: Date, default: Date.now }, // ✅ Set default date
     amount: { type: Number, required: true },
-    transactionId: { type: String, required: true, unique: true },
+    transactionReference: { type: String, required: true, unique: true }, // ✅ Fix name
   },
   { timestamps: true }
 );
