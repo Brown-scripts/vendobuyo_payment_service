@@ -214,3 +214,20 @@ exports.paystackWebhook = async (req, res) => {
     res.status(500).json({ message: "Webhook processing failed", error: err.message });
   }
 };
+
+exports.getPaymentById = async (req, res) => {
+  try {
+      const { orderId } = req.params;
+      const payment = await Payment.findById(orderId);
+
+      if (!payment) {
+          return res.status(404).json({ message: "Payment not found" });
+      }
+
+      res.status(200).json(payment);
+  } catch (error) {
+      console.error("Error fetching payment:", error);
+      res.status(500).json({ message: "Server error", error: error.message });
+  }
+};
+
